@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -177,8 +178,13 @@ func main() {
 		}
 	})
 
-	fmt.Println("Server starting on :8080")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	fmt.Printf("Server starting on :%s\n", port)
+	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		fmt.Println("Server error:", err)
 	}
 }
