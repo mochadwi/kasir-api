@@ -17,8 +17,18 @@ type Produk struct {
 	Stok  int    `json:"stok"`
 }
 
-// In-memory storage for products
-var produk []Produk
+// Category represents a category in the system
+type Category struct {
+	ID          int    `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+// In-memory storage
+var (
+	produk     []Produk
+	categories []Category
+)
 
 func init() {
 	// Initialize with sample data
@@ -26,6 +36,11 @@ func init() {
 		{ID: 1, Nama: "Laptop", Harga: 10000000, Stok: 5},
 		{ID: 2, Nama: "Mouse", Harga: 150000, Stok: 20},
 		{ID: 3, Nama: "Keyboard", Harga: 500000, Stok: 15},
+	}
+
+	categories = []Category{
+		{ID: 1, Name: "Elektronik", Description: "Barang-barang elektronik"},
+		{ID: 2, Name: "Aksesoris", Description: "Aksesoris gadget"},
 	}
 }
 
@@ -147,6 +162,119 @@ func deleteProduk(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"error": "product not found"})
 }
 
+// --- Category Handlers ---
+
+// Get all categories
+func getAllCategories(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(categories)
+}
+
+// Create new category
+func createCategory(w http.ResponseWriter, r *http.Request) {
+	var c Category
+	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid request"})
+		return
+	}
+
+	c.ID = len(categories) + 1
+	categories = append(categories, c)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(c)
+}
+
+// Get category by ID
+func getCategoryByID(w http.ResponseWriter, r *http.Request) {
+	idStr := strings.TrimPrefix(r.URL.Path, "/categories/")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid ID"})
+		return
+	}
+
+	for _, c := range categories {
+		if c.ID == id {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(c)
+			return
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusNotFound)
+	json.NewEncoder(w).Encode(map[string]string{"error": "category not found"})
+}
+
+// Update category by ID
+func updateCategory(w http.ResponseWriter, r *http.Request) {
+	idStr := strings.TrimPrefix(r.URL.Path, "/categories/")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid ID"})
+		return
+	}
+
+	var updateCat Category
+	if err := json.NewDecoder(r.Body).Decode(&updateCat); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid request"})
+		return
+	}
+
+	for i, c := range categories {
+		if c.ID == id {
+			updateCat.ID = id
+			categories[i] = updateCat
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(updateCat)
+			return
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusNotFound)
+	json.NewEncoder(w).Encode(map[string]string{"error": "category not found"})
+}
+
+// Delete category by ID
+func deleteCategory(w http.ResponseWriter, r *http.Request) {
+	idStr := strings.TrimPrefix(r.URL.Path, "/categories/")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid ID"})
+		return
+	}
+
+	for i, c := range categories {
+		if c.ID == id {
+			categories = append(categories[:i], categories[i+1:]...)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(map[string]string{"message": "category deleted"})
+			return
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusNotFound)
+	json.NewEncoder(w).Encode(map[string]string{"error": "category not found"})
+}
+
 // Main function
 func main() {
 	http.HandleFunc("/health", healthHandler)
@@ -171,6 +299,35 @@ func main() {
 			updateProduk(w, r)
 		case http.MethodDelete:
 			deleteProduk(w, r)
+		default:
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			json.NewEncoder(w).Encode(map[string]string{"error": "method not allowed"})
+		}
+	})
+
+	// Category routes
+	http.HandleFunc("/categories", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			getAllCategories(w, r)
+		case http.MethodPost:
+			createCategory(w, r)
+		default:
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			json.NewEncoder(w).Encode(map[string]string{"error": "method not allowed"})
+		}
+	})
+
+	http.HandleFunc("/categories/", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			getCategoryByID(w, r)
+		case http.MethodPut:
+			updateCategory(w, r)
+		case http.MethodDelete:
+			deleteCategory(w, r)
 		default:
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusMethodNotAllowed)
