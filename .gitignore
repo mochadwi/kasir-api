@@ -33,3 +33,7 @@ go.work
 # Firebase
 firebase-debug.log
 .firebase/
+
+# Agent/Beads
+AGENTS.md
+.beads/

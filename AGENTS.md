@@ -10,7 +10,10 @@
 ## Architecture
 - API: REST API for point-of-sale (kasir) system
 - Structure: cmd/ (entrypoints), internal/ (business logic), pkg/ (shared libs)
-- Database: Update this when DB is added (PostgreSQL/MySQL recommended)
+- Database: PostgreSQL (Supabase) using database/sql with pgx driver
+- Config: Viper for environment-based configuration (.env support)
+- Pattern: Layered Architecture (Handler → Service → Repository → Model)
+- DI: Manual dependency injection in cmd/api/main.go
 
 ## Code Style
 - Imports: stdlib first, then external, then internal (grouped with blank lines)
@@ -22,6 +25,49 @@
 ## Kasir API Implementation Workflow
 
 **Completed Epic: kasir-api-12a** - Build Kasir (POS) REST API in Go from scratch
+**In Progress Epic: kasir-api-layered** - Refactor to Layered Architecture with PostgreSQL
+
+### Task Completion Order (Layered Architecture)
+1. **kasir-api-layered.1**: Project Structure - Create cmd/, internal/, pkg/ directories
+2. **kasir-api-layered.2**: Config Management - Viper setup with .env support
+3. **kasir-api-layered.3**: Database Connection - PostgreSQL with pgx driver
+4. **kasir-api-layered.4-8**: Category Layers - Model, Repository, Service, Handler, DI
+5. **kasir-api-layered.9-14**: Product Layers - Model, Repository, Service, Handler, DI
+6. **kasir-api-layered.15**: Challenge - Add category_id with JOIN (optional)
+7. **kasir-api-layered.16**: Railway Deployment - Update config for database
+8. **kasir-api-layered.17**: Testing & Quality Gates - Run build, format, lint
+
+### Project Structure
+```
+cmd/api/main.go          # Entry point with DI wiring
+internal/
+  config/                # Viper configuration
+  db/                    # PostgreSQL connection
+  category/              # Category feature
+    model/category.go
+    repository/
+      repository.go      # Interface
+      postgres.go        # Implementation
+    service/service.go
+    handler/handler.go
+  product/               # Product feature (same structure)
+pkg/utils/               # Shared utilities
+```
+
+### Layered Architecture Flow
+```
+HTTP Request
+    ↓
+Handler (parse request, validate, call service)
+    ↓
+Service (business logic, orchestration)
+    ↓
+Repository (SQL queries, database access)
+    ↓
+Model (data structures)
+    ↓
+PostgreSQL (Supabase)
+```
 
 ### Task Completion Order
 1. **kasir-api-12a.1**: Project Setup - `go mod init kasir-api`, create main.go with all imports
@@ -77,3 +123,4 @@
 - NEVER stop before pushing - that leaves work stranded locally
 - NEVER say "ready to push when you are" - YOU must push
 - If push fails, resolve and retry until it succeeds
+- ALWAYS git commit for every task completions
