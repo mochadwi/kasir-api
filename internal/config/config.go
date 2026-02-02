@@ -39,11 +39,12 @@ func Load() (*Config, error) {
 	}
 
 	var cfg Config
-	if err := viper.Unmarshal(&cfg); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
-	}
 
-	// Also check direct env var (in case viper didn't pick it up)
+	// Get values directly from viper (handles both .env and env vars)
+	cfg.Server.Port = viper.GetString("PORT")
+	cfg.Database.URL = viper.GetString("DATABASE_URL")
+
+	// Fallback to direct env var if still empty
 	if cfg.Database.URL == "" {
 		cfg.Database.URL = os.Getenv("DATABASE_URL")
 	}

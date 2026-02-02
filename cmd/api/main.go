@@ -32,17 +32,24 @@ func main() {
 	}
 	defer database.Close()
 
-	// 3. Initialize category layers with Dependency Injection
+	// 3. Run database migrations
+	if err := db.Migrate(database); err != nil {
+		fmt.Println("Failed to migrate database:", err)
+		os.Exit(1)
+	}
+	fmt.Println("Database migrated successfully")
+
+	// 4. Initialize category layers with Dependency Injection
 	catRepo := categoryRepo.NewPostgres(database)
 	catSvc := categorySvc.New(catRepo)
 	catHandler := handler.New(catSvc)
 
-	// 4. Initialize product layers with Dependency Injection
+	// 5. Initialize product layers with Dependency Injection
 	prodRepo := productRepo.NewPostgres(database)
 	prodSvc := productSvc.New(prodRepo)
 	prodHandler := productHandler.New(prodSvc)
 
-	// 5. Setup HTTP routes
+	// 6. Setup HTTP routes
 	http.HandleFunc("/health", healthHandler)
 
 	// Category routes
@@ -53,7 +60,7 @@ func main() {
 	http.HandleFunc("/api/produk", prodHandler.Handle)
 	http.HandleFunc("/api/produk/", prodHandler.HandleWithID)
 
-	// 6. Start server
+	// 7. Start server
 	port := cfg.Server.Port
 	if port == "" {
 		port = "8080"
