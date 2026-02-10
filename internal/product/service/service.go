@@ -11,6 +11,7 @@ import (
 // Service defines the interface for product business logic
 type Service interface {
 	ListProducts(ctx context.Context) ([]model.Product, error)
+	SearchProducts(ctx context.Context, name string) ([]model.Product, error)
 	CreateProduct(ctx context.Context, p model.Product) (model.Product, error)
 	GetProduct(ctx context.Context, id int64) (model.Product, error)
 	UpdateProduct(ctx context.Context, id int64, p model.Product) (model.Product, error)
@@ -30,6 +31,11 @@ func New(repo repository.Repository) Service {
 // ListProducts returns all products
 func (s *productService) ListProducts(ctx context.Context) ([]model.Product, error) {
 	return s.repo.List(ctx)
+}
+
+// SearchProducts returns products matching the name
+func (s *productService) SearchProducts(ctx context.Context, name string) ([]model.Product, error) {
+	return s.repo.Search(ctx, name)
 }
 
 // CreateProduct creates a new product with validation

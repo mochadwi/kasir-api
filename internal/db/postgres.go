@@ -67,9 +67,33 @@ func Migrate(db *sql.DB) error {
 	addCategoryID := `
 	ALTER TABLE products 
 	ADD COLUMN IF NOT EXISTS category_id INTEGER REFERENCES categories(id);`
-	
+
 	if _, err := db.ExecContext(ctx, addCategoryID); err != nil {
 		return fmt.Errorf("failed to add category_id column: %w", err)
+	}
+
+	transactionsTable := `
+	CREATE TABLE IF NOT EXISTS transactions (
+		id SERIAL PRIMARY KEY,
+		total_amount INTEGER NOT NULL,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	);`
+
+	if _, err := db.ExecContext(ctx, transactionsTable); err != nil {
+		return fmt.Errorf("failed to create transactions table: %w", err)
+	}
+
+	transactionDetailsTable := `
+	CREATE TABLE IF NOT EXISTS transaction_details (
+		id SERIAL PRIMARY KEY,
+		transaction_id INTEGER REFERENCES transactions(id) ON DELETE CASCADE,
+		product_id INTEGER REFERENCES products(id),
+		quantity INTEGER NOT NULL,
+		subtotal INTEGER NOT NULL
+	);`
+
+	if _, err := db.ExecContext(ctx, transactionDetailsTable); err != nil {
+		return fmt.Errorf("failed to create transaction_details table: %w", err)
 	}
 
 	// Insert sample data

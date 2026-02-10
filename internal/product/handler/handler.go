@@ -53,7 +53,16 @@ func (h *Handler) HandleWithID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) list(w http.ResponseWriter, r *http.Request) {
-	products, err := h.service.ListProducts(r.Context())
+	var products []model.Product
+	var err error
+
+	name := r.URL.Query().Get("name")
+	if name != "" {
+		products, err = h.service.SearchProducts(r.Context(), name)
+	} else {
+		products, err = h.service.ListProducts(r.Context())
+	}
+
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return

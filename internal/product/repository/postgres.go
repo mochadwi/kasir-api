@@ -38,6 +38,29 @@ func (r *PostgresRepository) List(ctx context.Context) ([]model.Product, error) 
 	return products, rows.Err()
 }
 
+// Search returns products matching the name using case-insensitive partial match
+func (r *PostgresRepository) Search(ctx context.Context, name string) ([]model.Product, error) {
+	pattern := "%" + name + "%"
+	rows, err := r.db.QueryContext(ctx,
+		"SELECT id, nama, harga, stok, category_id FROM products WHERE nama ILIKE $1 ORDER BY id",
+		pattern)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search products: %w", err)
+	}
+	defer rows.Close()
+
+	var products []model.Product
+	for rows.Next() {
+		var p model.Product
+		if err := rows.Scan(&p.ID, &p.Nama, &p.Harga, &p.Stok, &p.CategoryID); err != nil {
+			return nil, fmt.Errorf("failed to scan product: %w", err)
+		}
+		products = append(products, p)
+	}
+
+	return products, rows.Err()
+}
+
 // Create inserts a new product and returns it with ID
 func (r *PostgresRepository) Create(ctx context.Context, p model.Product) (model.Product, error) {
 	var id int64

@@ -14,6 +14,12 @@ import (
 	productHandler "kasir-api/internal/product/handler"
 	productRepo "kasir-api/internal/product/repository"
 	productSvc "kasir-api/internal/product/service"
+	reportHandler "kasir-api/internal/report/handler"
+	reportRepo "kasir-api/internal/report/repository"
+	reportSvc "kasir-api/internal/report/service"
+	transactionHandler "kasir-api/internal/transaction/handler"
+	transactionRepo "kasir-api/internal/transaction/repository"
+	transactionSvc "kasir-api/internal/transaction/service"
 )
 
 func main() {
@@ -49,7 +55,17 @@ func main() {
 	prodSvc := productSvc.New(prodRepo)
 	prodHandler := productHandler.New(prodSvc)
 
-	// 6. Setup HTTP routes
+	// 6. Initialize transaction layers with Dependency Injection
+	transRepo := transactionRepo.NewPostgres(database)
+	transSvc := transactionSvc.New(transRepo)
+	transHandler := transactionHandler.New(transSvc)
+
+	// 7. Initialize report layers with Dependency Injection
+	repRepo := reportRepo.NewPostgres(database)
+	repSvc := reportSvc.New(repRepo)
+	repHandler := reportHandler.New(repSvc)
+
+	// 8. Setup HTTP routes
 	http.HandleFunc("/health", healthHandler)
 
 	// Category routes
@@ -60,7 +76,13 @@ func main() {
 	http.HandleFunc("/api/produk", prodHandler.Handle)
 	http.HandleFunc("/api/produk/", prodHandler.HandleWithID)
 
-	// 7. Start server
+	// Transaction routes
+	http.HandleFunc("/api/checkout", transHandler.HandleCheckout)
+
+	// Report routes
+	http.HandleFunc("/api/report", repHandler.HandleGetReport)
+
+	// 9. Start server
 	port := cfg.Server.Port
 	if port == "" {
 		port = "8080"
