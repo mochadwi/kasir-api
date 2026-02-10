@@ -20,7 +20,7 @@ func NewPostgres(db *sql.DB) Repository {
 
 // List returns all products
 func (r *PostgresRepository) List(ctx context.Context) ([]model.Product, error) {
-	rows, err := r.db.QueryContext(ctx, "SELECT id, nama, harga, stok FROM products ORDER BY id")
+	rows, err := r.db.QueryContext(ctx, "SELECT id, nama, harga, stok, category_id FROM products ORDER BY id")
 	if err != nil {
 		return nil, fmt.Errorf("failed to list products: %w", err)
 	}
@@ -29,7 +29,7 @@ func (r *PostgresRepository) List(ctx context.Context) ([]model.Product, error) 
 	var products []model.Product
 	for rows.Next() {
 		var p model.Product
-		if err := rows.Scan(&p.ID, &p.Nama, &p.Harga, &p.Stok); err != nil {
+		if err := rows.Scan(&p.ID, &p.Nama, &p.Harga, &p.Stok, &p.CategoryID); err != nil {
 			return nil, fmt.Errorf("failed to scan product: %w", err)
 		}
 		products = append(products, p)
@@ -42,8 +42,8 @@ func (r *PostgresRepository) List(ctx context.Context) ([]model.Product, error) 
 func (r *PostgresRepository) Create(ctx context.Context, p model.Product) (model.Product, error) {
 	var id int64
 	err := r.db.QueryRowContext(ctx,
-		"INSERT INTO products (nama, harga, stok) VALUES ($1, $2, $3) RETURNING id",
-		p.Nama, p.Harga, p.Stok).Scan(&id)
+		"INSERT INTO products (nama, harga, stok, category_id) VALUES ($1, $2, $3, $4) RETURNING id",
+		p.Nama, p.Harga, p.Stok, p.CategoryID).Scan(&id)
 	if err != nil {
 		return model.Product{}, fmt.Errorf("failed to create product: %w", err)
 	}
@@ -56,8 +56,8 @@ func (r *PostgresRepository) Create(ctx context.Context, p model.Product) (model
 func (r *PostgresRepository) GetByID(ctx context.Context, id int64) (model.Product, error) {
 	var p model.Product
 	err := r.db.QueryRowContext(ctx,
-		"SELECT id, nama, harga, stok FROM products WHERE id = $1",
-		id).Scan(&p.ID, &p.Nama, &p.Harga, &p.Stok)
+		"SELECT id, nama, harga, stok, category_id FROM products WHERE id = $1",
+		id).Scan(&p.ID, &p.Nama, &p.Harga, &p.Stok, &p.CategoryID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return model.Product{}, model.ErrProductNotFound
@@ -70,8 +70,8 @@ func (r *PostgresRepository) GetByID(ctx context.Context, id int64) (model.Produ
 // Update modifies an existing product
 func (r *PostgresRepository) Update(ctx context.Context, id int64, p model.Product) (model.Product, error) {
 	result, err := r.db.ExecContext(ctx,
-		"UPDATE products SET nama = $1, harga = $2, stok = $3 WHERE id = $4",
-		p.Nama, p.Harga, p.Stok, id)
+		"UPDATE products SET nama = $1, harga = $2, stok = $3, category_id = $4 WHERE id = $5",
+		p.Nama, p.Harga, p.Stok, p.CategoryID, id)
 	if err != nil {
 		return model.Product{}, fmt.Errorf("failed to update product: %w", err)
 	}

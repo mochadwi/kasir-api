@@ -68,5 +68,8 @@ func validateProduct(p model.Product) error {
 	if p.Stok < 0 {
 		return fmt.Errorf("%w: stok cannot be negative", model.ErrInvalidProduct)
 	}
+	if p.CategoryID != nil && *p.CategoryID <= 0 {
+		return fmt.Errorf("%w: category_id must be positive", model.ErrInvalidProduct)
+	}
 	return nil
 }

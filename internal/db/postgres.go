@@ -47,6 +47,7 @@ func Migrate(db *sql.DB) error {
 		nama VARCHAR(200) NOT NULL,
 		harga INTEGER NOT NULL DEFAULT 0,
 		stok INTEGER NOT NULL DEFAULT 0,
+		category_id INTEGER REFERENCES categories(id),
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	);`
@@ -62,6 +63,15 @@ func Migrate(db *sql.DB) error {
 		return fmt.Errorf("failed to create products table: %w", err)
 	}
 
+	// Add category_id column if it doesn't exist (migration for existing tables)
+	addCategoryID := `
+	ALTER TABLE products 
+	ADD COLUMN IF NOT EXISTS category_id INTEGER REFERENCES categories(id);`
+	
+	if _, err := db.ExecContext(ctx, addCategoryID); err != nil {
+		return fmt.Errorf("failed to add category_id column: %w", err)
+	}
+
 	// Insert sample data
 	insertCategories := `
 	INSERT INTO categories (name, description) VALUES
@@ -71,10 +81,10 @@ func Migrate(db *sql.DB) error {
 	ON CONFLICT DO NOTHING;`
 
 	insertProducts := `
-	INSERT INTO products (nama, harga, stok) VALUES
-		('Es Teh Manis', 5000, 100),
-		('Nasi Goreng', 25000, 50),
-		('Keripik Kentang', 8000, 200)
+	INSERT INTO products (nama, harga, stok, category_id) VALUES
+		('Es Teh Manis', 5000, 100, 1),
+		('Nasi Goreng', 25000, 50, 2),
+		('Keripik Kentang', 8000, 200, 3)
 	ON CONFLICT DO NOTHING;`
 
 	db.ExecContext(ctx, insertCategories)
