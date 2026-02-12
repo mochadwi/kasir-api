@@ -81,6 +81,7 @@ func main() {
 
 	// Report routes
 	http.HandleFunc("/api/report", repHandler.HandleGetReport)
+	http.HandleFunc("/api/report/hari-ini", repHandler.HandleGetTodayReport)
 
 	// 9. Start server
 	port := cfg.Server.Port

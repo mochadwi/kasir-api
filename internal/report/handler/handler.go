@@ -40,12 +40,27 @@ func (h *Handler) HandleGetReport(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, report)
 }
 
-func respondWithJSON(w http.ResponseWriter, status int, payload interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(payload)
+func (h *Handler) HandleGetTodayReport(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		respondWithError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	report, err := h.service.GetTodayReport(r.Context())
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, report)
 }
 
 func respondWithError(w http.ResponseWriter, status int, message string) {
 	respondWithJSON(w, status, map[string]string{"error": message})
+}
+
+func respondWithJSON(w http.ResponseWriter, status int, payload interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(payload)
 }

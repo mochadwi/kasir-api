@@ -10,6 +10,7 @@ import (
 
 type Service interface {
 	GetSalesReport(ctx context.Context, startDate, endDate *string) (*model.SalesReport, error)
+	GetTodayReport(ctx context.Context) (*model.SalesReport, error)
 }
 
 type reportService struct {
@@ -41,5 +42,12 @@ func (s *reportService) GetSalesReport(ctx context.Context, startDate, endDate *
 		end = time.Date(parsed.Year(), parsed.Month(), parsed.Day(), 23, 59, 59, 999999999, parsed.Location())
 	}
 
+	return s.repo.GetSalesReport(ctx, &start, &end)
+}
+
+func (s *reportService) GetTodayReport(ctx context.Context) (*model.SalesReport, error) {
+	now := time.Now()
+	start := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	end := start.Add(24 * time.Hour).Add(-time.Nanosecond)
 	return s.repo.GetSalesReport(ctx, &start, &end)
 }
